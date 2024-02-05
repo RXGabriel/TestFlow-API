@@ -2,34 +2,31 @@ import bcrypt from "bcrypt";
 import { User } from "../models/User";
 
 export const createUser = async (email: string, password: string) => {
-  try {
-    const existingUser = await User.findOne({ where: { email } });
+  const hasUser = await User.findOne({ where: { email } });
 
-    if (existingUser) {
-      throw new Error("E-mail já existe");
-    }
-
-    const hash = bcrypt.hashSync(password, 10);
+  if (!hasUser) {
+    const hash = await bcrypt.hash(password, 10);
     const newUser = await User.create({
       email,
       password: hash,
     });
-
     return newUser;
-  } catch (error) {
-    return error;
+  } else {
+    return new Error("Email ja existente");
   }
 };
-
 export const findByEmail = async (email: string) => {
   return await User.findOne({ where: { email } });
 };
 
-export const matchPassword = async (
-  passwordtext: string,
-  encrypted: string
-) => {
-  return bcrypt.compareSync(passwordtext, encrypted);
+export const matchPassword = (passwordtext: string, encrypted: string) => {
+  try {
+    const result = bcrypt.compareSync(passwordtext, encrypted);
+    return result;
+  } catch (error) {
+    console.error("Error matching password:", error);
+    return false;
+  }
 };
 
 export const listAll = async () => {
